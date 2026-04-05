@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,15 +16,13 @@ import {
 } from '@/components/ui/select'
 import { MODELS } from '@/lib/constants'
 import { buttonVariants } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Bot,
   Globe,
-  Sparkles,
   Palette,
   Code2,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Check,
   Loader2,
@@ -35,15 +32,15 @@ import {
   Link as LinkIcon,
   MessageSquare,
   AlertCircle,
+  Rocket,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types & constants
 // ---------------------------------------------------------------------------
 
-const STEP_COUNT = 4
-
 const COLOR_PRESETS = [
+  { name: 'White', value: '#ffffff' },
   { name: 'Violet', value: '#7c3aed' },
   { name: 'Blue', value: '#2563eb' },
   { name: 'Green', value: '#059669' },
@@ -109,59 +106,6 @@ function buildEmbedCode(
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function StepIndicator({ current }: { current: number }) {
-  const steps = [
-    { label: 'Create', icon: Bot },
-    { label: 'Customize', icon: Palette },
-    { label: 'Deploy', icon: Code2 },
-    { label: 'Done', icon: CheckCircle2 },
-  ]
-
-  return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-2">
-        {steps.map((step, idx) => {
-          const Icon = step.icon
-          const stepNum = idx + 1
-          const done = stepNum < current
-          const active = stepNum === current
-          return (
-            <div key={idx} className="flex flex-col items-center flex-1">
-              <div
-                className={[
-                  'w-9 h-9 rounded-full flex items-center justify-center mb-1 transition-colors',
-                  done
-                    ? 'bg-violet-600 text-white'
-                    : active
-                    ? 'bg-violet-600 text-white ring-2 ring-violet-300'
-                    : 'bg-gray-100 text-gray-400',
-                ].join(' ')}
-              >
-                {done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-              </div>
-              <span
-                className={[
-                  'text-xs font-medium',
-                  active ? 'text-violet-700' : done ? 'text-violet-500' : 'text-gray-400',
-                ].join(' ')}
-              >
-                {step.label}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-      <div className="relative h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className="absolute left-0 top-0 h-full bg-violet-600 transition-all duration-500 rounded-full"
-          style={{ width: `${((current - 1) / (STEP_COUNT - 1)) * 100}%` }}
-        />
-      </div>
-      <p className="text-xs text-gray-400 mt-1 text-right">Step {current} of {STEP_COUNT}</p>
-    </div>
-  )
-}
-
 function ChatBubblePreview({
   color,
   position,
@@ -199,10 +143,8 @@ function ChatBubblePreview({
 // ---------------------------------------------------------------------------
 
 export default function NewChatbotPage() {
-  const router = useRouter()
-
-  // Step state
-  const [step, setStep] = useState(1)
+  // Active tab
+  const [activeTab, setActiveTab] = useState('create')
 
   // Step 1 form
   const [form, setForm] = useState({
@@ -266,7 +208,7 @@ export default function NewChatbotPage() {
     reader.readAsDataURL(file)
   }
 
-  async function handleStep1Next() {
+  async function handleCreateChatbot() {
     if (!form.name.trim()) return
     setLoading(true)
     setError(null)
@@ -300,7 +242,7 @@ export default function NewChatbotPage() {
         }).catch(() => {})
       }
 
-      setStep(2)
+      setActiveTab('customize')
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -308,8 +250,12 @@ export default function NewChatbotPage() {
     }
   }
 
-  async function handleStep2Next() {
-    if (!chatbotId) return
+  async function handleSaveWidget() {
+    if (!chatbotId) {
+      setError('Create your chatbot first before saving widget settings.')
+      setActiveTab('create')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -328,7 +274,7 @@ export default function NewChatbotPage() {
         setError(json.error ?? 'Failed to save widget config.')
         return
       }
-      setStep(3)
+      setActiveTab('deploy')
     } catch {
       setError('Network error. Please try again.')
     } finally {
@@ -337,32 +283,24 @@ export default function NewChatbotPage() {
   }
 
   async function handleInstallSubmit() {
-    if (!chatbotId) return
+    if (!chatbotId) {
+      setError('Create your chatbot first before requesting install.')
+      setActiveTab('create')
+      return
+    }
     setInstallLoading(true)
     setError(null)
     try {
       await fetch(`/api/chatbots/${chatbotId}/install-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(install),
+        body: JSON.stringify({ ...install, position: widget.position }),
       })
-      // Proceed regardless — endpoint may not exist yet
       setInstallSubmitted(true)
-      setStep(4)
     } catch {
-      // Non-fatal
       setInstallSubmitted(true)
-      setStep(4)
     } finally {
       setInstallLoading(false)
-    }
-  }
-
-  function handleStep3Next() {
-    if (deployPath === 'self') {
-      setStep(4)
-    } else if (deployPath === 'managed') {
-      handleInstallSubmit()
     }
   }
 
@@ -396,7 +334,7 @@ export default function NewChatbotPage() {
   // Step panels
   // -------------------------------------------------------------------------
 
-  function renderStep1() {
+  function renderCreateTab() {
     return (
       <div className="space-y-5">
         <div>
@@ -411,7 +349,7 @@ export default function NewChatbotPage() {
         </div>
 
         <div>
-          <Label htmlFor="website_url">Website URL <span className="text-gray-400 font-normal text-xs">(optional — for auto-training)</span></Label>
+          <Label htmlFor="website_url">Website URL <span className="text-gray-400 font-normal text-xs">(optional -- for auto-training)</span></Label>
           <div className="relative mt-1">
             <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -468,7 +406,7 @@ export default function NewChatbotPage() {
         </div>
 
         <div>
-          <Label htmlFor="temp">Temperature &mdash; <span className="font-normal">{form.temperature}</span></Label>
+          <Label htmlFor="temp">Temperature -- <span className="font-normal">{form.temperature}</span></Label>
           <input
             id="temp"
             type="range"
@@ -484,11 +422,29 @@ export default function NewChatbotPage() {
             <span>Creative</span>
           </div>
         </div>
+
+        <div className="pt-2">
+          <Button
+            type="button"
+            onClick={handleCreateChatbot}
+            disabled={loading || !form.name.trim() || !!chatbotId}
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {chatbotId ? (
+              <><Check className="h-4 w-4 mr-2 text-green-400" /> Chatbot Created</>
+            ) : (
+              'Create Chatbot'
+            )}
+          </Button>
+          {chatbotId && (
+            <p className="text-xs text-green-600 mt-2">Chatbot created successfully. You can now customize and deploy it.</p>
+          )}
+        </div>
       </div>
     )
   }
 
-  function renderStep2() {
+  function renderCustomizeTab() {
     return (
       <div className="space-y-6">
         {/* Logo */}
@@ -572,21 +528,27 @@ export default function NewChatbotPage() {
         <div>
           <Label>Brand Color</Label>
           <div className="flex flex-wrap gap-2 mt-2">
-            {COLOR_PRESETS.map((preset) => (
-              <button
-                key={preset.value}
-                type="button"
-                title={preset.name}
-                onClick={() => setWidget((w) => ({ ...w, accent_color: preset.value, customHex: '' }))}
-                className={[
-                  'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
-                  widget.accent_color === preset.value && !widget.customHex
-                    ? 'border-gray-700 scale-110'
-                    : 'border-transparent',
-                ].join(' ')}
-                style={{ backgroundColor: preset.value }}
-              />
-            ))}
+            {COLOR_PRESETS.map((preset) => {
+              const isActive = widget.accent_color === preset.value && !widget.customHex
+              const isWhite = preset.value === '#ffffff'
+              return (
+                <button
+                  key={preset.value}
+                  type="button"
+                  title={preset.name}
+                  onClick={() => setWidget((w) => ({ ...w, accent_color: preset.value, customHex: '' }))}
+                  className={[
+                    'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
+                    isActive
+                      ? 'border-gray-700 scale-110'
+                      : isWhite
+                      ? 'border-gray-300'
+                      : 'border-transparent',
+                  ].join(' ')}
+                  style={{ backgroundColor: preset.value }}
+                />
+              )
+            })}
           </div>
           <div className="flex items-center gap-2 mt-2">
             <div
@@ -648,11 +610,25 @@ export default function NewChatbotPage() {
             />
           </div>
         </div>
+
+        <div className="pt-2">
+          <Button
+            type="button"
+            onClick={handleSaveWidget}
+            disabled={loading || !chatbotId}
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            Save Widget Settings
+          </Button>
+          {!chatbotId && (
+            <p className="text-xs text-amber-600 mt-2">Create your chatbot first on the Create tab.</p>
+          )}
+        </div>
       </div>
     )
   }
 
-  function renderStep3() {
+  function renderDeployTab() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-gray-600">How would you like to add the chatbot to your website?</p>
@@ -844,83 +820,50 @@ export default function NewChatbotPage() {
                 Your credentials are encrypted with AES-256 and used only to install your chatbot. We delete them within 48 hours.
               </p>
             </div>
+
+            <Button
+              type="button"
+              onClick={handleInstallSubmit}
+              disabled={installLoading || !install.platform || !install.website_url || !install.username || !install.password || !chatbotId}
+            >
+              {installLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {installSubmitted ? (
+                <><Check className="h-4 w-4 mr-2 text-green-400" /> Install Requested</>
+              ) : (
+                'Request Managed Install'
+              )}
+            </Button>
+          </div>
+        )}
+
+        {!chatbotId && (
+          <p className="text-xs text-amber-600 mt-4">Create your chatbot first on the Create tab.</p>
+        )}
+
+        {/* Success banner */}
+        {chatbotId && (deployPath === 'self' || installSubmitted) && (
+          <div className="flex flex-col items-center text-center py-6 mt-4 border-t border-gray-100 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="h-7 w-7 text-green-600" />
+            </div>
+            <p className="text-sm text-gray-600 max-w-sm">
+              {installSubmitted
+                ? "We'll install your chatbot within 24 hours. Manage it from your dashboard."
+                : 'Your embed code is ready. Paste it on your site and you are live.'}
+            </p>
+            <div className="flex gap-3">
+              <Link href={`/chatbots/${chatbotId}`} className={buttonVariants({ variant: 'default', size: 'sm' })}>
+                <Bot className="h-4 w-4 mr-2" /> Open Dashboard
+              </Link>
+              <Link href="/chatbots" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                All Chatbots
+              </Link>
+            </div>
           </div>
         )}
       </div>
     )
   }
-
-  function renderStep4() {
-    return (
-      <div className="flex flex-col items-center text-center py-6 space-y-4">
-        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-          <CheckCircle2 className="h-9 w-9 text-green-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900">Your chatbot is ready!</h2>
-        {installSubmitted ? (
-          <p className="text-gray-500 max-w-sm">
-            We'll install your chatbot within 24 hours. You can already preview and configure it from your dashboard.
-          </p>
-        ) : (
-          <p className="text-gray-500 max-w-sm">
-            Your chatbot has been created and the embed code has been added to your site. Head to your dashboard to manage it.
-          </p>
-        )}
-        {chatbotId && (
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link href={`/chatbots/${chatbotId}`} className={buttonVariants({ variant: 'default' })}>
-              <Bot className="h-4 w-4 mr-2" />
-              Open Chatbot Dashboard
-            </Link>
-            <Link href="/chatbots" className={buttonVariants({ variant: 'outline' })}>
-              Back to Chatbots
-            </Link>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // -------------------------------------------------------------------------
-  // Navigation controls
-  // -------------------------------------------------------------------------
-
-  function canProceed(): boolean {
-    if (step === 1) return form.name.trim().length > 0
-    if (step === 2) return true
-    if (step === 3) {
-      if (!deployPath) return false
-      if (deployPath === 'managed') {
-        return !!(install.platform && install.website_url && install.login_url && install.username && install.password)
-      }
-      return true
-    }
-    return false
-  }
-
-  function handleNext() {
-    if (step === 1) handleStep1Next()
-    else if (step === 2) handleStep2Next()
-    else if (step === 3) handleStep3Next()
-  }
-
-  function handleBack() {
-    setError(null)
-    setStep((s) => Math.max(1, s - 1))
-  }
-
-  const stepTitles = [
-    'Create Your Chatbot',
-    'Customize Your Widget',
-    'Add to Your Website',
-    'All Done!',
-  ]
-  const stepDescriptions = [
-    'Give your chatbot a name and configure its AI settings.',
-    'Choose a logo, brand color, and position for the chat bubble.',
-    'Choose how you want to deploy the chatbot to your site.',
-    'Your chatbot is live and ready to help your visitors.',
-  ]
 
   // -------------------------------------------------------------------------
   // Render
@@ -930,65 +873,47 @@ export default function NewChatbotPage() {
     <div className="max-w-xl mx-auto py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">New Chatbot</h1>
-        <p className="text-gray-500 mt-1 text-sm">Complete setup in a few steps — no separate pages required.</p>
+        <p className="text-gray-500 mt-1 text-sm">Set up your chatbot, customize the widget, and deploy -- all from one page.</p>
       </div>
 
-      <StepIndicator current={step} />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="create" className="flex items-center gap-1.5">
+            <Bot className="h-4 w-4" />
+            <span className="hidden sm:inline">Create</span>
+            {chatbotId && <Check className="h-3.5 w-3.5 text-green-500" />}
+          </TabsTrigger>
+          <TabsTrigger value="customize" className="flex items-center gap-1.5">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">Customize</span>
+          </TabsTrigger>
+          <TabsTrigger value="deploy" className="flex items-center gap-1.5">
+            <Rocket className="h-4 w-4" />
+            <span className="hidden sm:inline">Deploy</span>
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            {step === 1 && <Bot className="h-5 w-5 text-violet-600" />}
-            {step === 2 && <Palette className="h-5 w-5 text-violet-600" />}
-            {step === 3 && <Code2 className="h-5 w-5 text-violet-600" />}
-            {step === 4 && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            {stepTitles[step - 1]}
-          </CardTitle>
-          <CardDescription>{stepDescriptions[step - 1]}</CardDescription>
-        </CardHeader>
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-100 p-3 mb-4">
+            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
-        <CardContent>
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
-          {step === 4 && renderStep4()}
-
-          {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-100 p-3 mt-4">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {step < 4 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={step === 1 ? () => router.back() : handleBack}
-                disabled={loading || installLoading}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                {step === 1 ? 'Cancel' : 'Back'}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={loading || installLoading || !canProceed()}
-              >
-                {(loading || installLoading) && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                {step === 3 && deployPath === 'managed' ? 'Request Install' : step === 3 ? 'Finish' : 'Next'}
-                {!(loading || installLoading) && step !== 3 && (
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                )}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <TabsContent value="create" className="mt-0">
+              {renderCreateTab()}
+            </TabsContent>
+            <TabsContent value="customize" className="mt-0">
+              {renderCustomizeTab()}
+            </TabsContent>
+            <TabsContent value="deploy" className="mt-0">
+              {renderDeployTab()}
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </Tabs>
     </div>
   )
 }
