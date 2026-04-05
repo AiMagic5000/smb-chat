@@ -19,7 +19,7 @@ export async function ensureDbUser(
   metadata?: { email?: string; full_name?: string }
 ) {
   const { data: existing } = await supabase
-    .from('users')
+    .from('chat_users')
     .select('id')
     .eq('id', userId)
     .single()
@@ -28,7 +28,7 @@ export async function ensureDbUser(
 
   // Create user record
   const { data: user } = await supabase
-    .from('users')
+    .from('chat_users')
     .insert({
       id: userId,
       email: metadata?.email ?? '',
@@ -63,7 +63,7 @@ export async function ensureDbUser(
       })
 
       // Create default subscription
-      await supabase.from('subscriptions').insert({
+      await supabase.from('chat_subscriptions').insert({
         workspace_id: ws.id,
         plan: 'starter',
         message_limit: 1000,

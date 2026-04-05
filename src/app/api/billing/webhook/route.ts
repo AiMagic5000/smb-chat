@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object
         await supabase
-          .from('subscriptions')
+          .from('chat_subscriptions')
           .update({
             stripe_subscription_id: subscription.id,
             status: subscription.status,
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object
         // Reset monthly usage
         await supabase
-          .from('subscriptions')
+          .from('chat_subscriptions')
           .update({ messages_used: 0, extra_message_credits: 0 })
           .eq('stripe_subscription_id', invoice.subscription)
         break
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object
         await supabase
-          .from('subscriptions')
+          .from('chat_subscriptions')
           .update({ status: 'canceled' })
           .eq('stripe_subscription_id', subscription.id)
         break

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: subscription } = await supabase
-      .from('subscriptions')
+      .from('chat_subscriptions')
       .select('*')
       .eq('workspace_id', chatbot.workspace_id)
       .single()
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     if (subscription) {
       await supabase
-        .from('subscriptions')
+        .from('chat_subscriptions')
         .update({ messages_used: subscription.messages_used + 1 })
         .eq('id', subscription.id)
     }

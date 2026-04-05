@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       accepted_at: new Date().toISOString(),
     })
 
-    await supabase.from('subscriptions').insert({
+    await supabase.from('chat_subscriptions').insert({
       workspace_id: workspace.id,
       plan: 'starter',
       message_limit: 1000,

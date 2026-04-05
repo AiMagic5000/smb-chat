@@ -20,7 +20,7 @@ export async function GET() {
     if (!member) return NextResponse.json({ success: false, error: 'No workspace' }, { status: 400 })
 
     const { data: subscription } = await supabase
-      .from('subscriptions')
+      .from('chat_subscriptions')
       .select('*')
       .eq('workspace_id', member.workspace_id)
       .single()
