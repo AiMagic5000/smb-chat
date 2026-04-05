@@ -13,7 +13,11 @@ export async function requireAuth(): Promise<AuthResult | null> {
   return { userId, supabase: createAdminClient() }
 }
 
-export async function ensureDbUser(userId: string, supabase: SupabaseClient, metadata?: { email?: string; full_name?: string }) {
+export async function ensureDbUser(
+  userId: string,
+  supabase: SupabaseClient,
+  metadata?: { email?: string; full_name?: string }
+) {
   const { data: existing } = await supabase
     .from('users')
     .select('id')
@@ -22,6 +26,7 @@ export async function ensureDbUser(userId: string, supabase: SupabaseClient, met
 
   if (existing) return existing
 
+  // Create user record
   const { data: user } = await supabase
     .from('users')
     .insert({
@@ -33,16 +38,38 @@ export async function ensureDbUser(userId: string, supabase: SupabaseClient, met
     .single()
 
   if (user) {
-    await supabase.from('workspaces').insert({ name: 'My Workspace', owner_id: userId }).select().single().then(({ data: ws }) => {
-      if (ws) {
-        return supabase.from('workspace_members').insert({
-          workspace_id: ws.id,
-          user_id: userId,
-          role: 'owner',
-          accepted_at: new Date().toISOString(),
-        })
-      }
-    })
+    // Generate a unique slug from email or userId
+    const slugBase = metadata?.email
+      ? metadata.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      : userId.slice(0, 12)
+    const slug = `${slugBase}-${Date.now().toString(36)}`
+
+    const { data: ws } = await supabase
+      .from('workspaces')
+      .insert({
+        name: metadata?.full_name ? `${metadata.full_name}'s Workspace` : 'My Workspace',
+        slug,
+        owner_id: userId,
+      })
+      .select()
+      .single()
+
+    if (ws) {
+      await supabase.from('workspace_members').insert({
+        workspace_id: ws.id,
+        user_id: userId,
+        role: 'owner',
+        accepted_at: new Date().toISOString(),
+      })
+
+      // Create default subscription
+      await supabase.from('subscriptions').insert({
+        workspace_id: ws.id,
+        plan: 'starter',
+        message_limit: 1000,
+        chatbot_limit: 1,
+      })
+    }
   }
 
   return user
