@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET(
   _req: NextRequest,
@@ -7,9 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     const widgetUrl = process.env.NEXT_PUBLIC_WIDGET_URL ?? 'https://brandmetrics.us/widget'
 

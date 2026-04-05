@@ -45,16 +45,16 @@ export default function LiveChatPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Live Chat</h1>
         <div className="flex gap-2">
           <Badge variant="outline">Queue: {conversations?.filter((c) => c.status === 'active' && c.is_live_chat).length ?? 0}</Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-4">
-          <Card className="h-[calc(100vh-200px)] flex flex-col">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+        <div className="lg:col-span-4">
+          <Card className="h-64 lg:h-[calc(100vh-200px)] flex flex-col">
             <CardHeader className="border-b py-3">
               <CardTitle className="text-sm">Conversation Queue</CardTitle>
             </CardHeader>
@@ -89,8 +89,8 @@ export default function LiveChatPage() {
           </Card>
         </div>
 
-        <div className="col-span-8">
-          <Card className="h-[calc(100vh-200px)] flex flex-col">
+        <div className="lg:col-span-8">
+          <Card className="h-80 lg:h-[calc(100vh-200px)] flex flex-col">
             {selectedId ? (
               <>
                 <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">

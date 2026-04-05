@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
   _req: NextRequest,
@@ -7,9 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId: authUserId } = await auth()
+    if (!authUserId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { data: members } = await supabase
       .from('workspace_members')
@@ -29,9 +30,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId: authUserId } = await auth()
+    if (!authUserId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { userId } = await req.json()
 

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { data: memberships } = await supabase
       .from('workspace_members')
       .select('workspace_id, role, workspaces(*)')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .not('accepted_at', 'is', null)
 
     return NextResponse.json({ success: true, data: memberships ?? [] })
@@ -27,19 +28,19 @@ const createSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const body = await req.json()
     const parsed = createSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 })
 
-    const slug = parsed.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + user.id.slice(0, 8)
+    const slug = parsed.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + userId.slice(0, 8)
 
     const { data: workspace, error } = await supabase
       .from('workspaces')
-      .insert({ name: parsed.data.name, slug, owner_id: user.id })
+      .insert({ name: parsed.data.name, slug, owner_id: userId })
       .select()
       .single()
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     await supabase.from('workspace_members').insert({
       workspace_id: workspace.id,
-      user_id: user.id,
+      user_id: userId,
       role: 'owner',
       accepted_at: new Date().toISOString(),
     })

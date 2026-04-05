@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
+import { clerkClient } from '@clerk/nextjs/server'
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await currentUser()
     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     return NextResponse.json({
       success: true,
       data: {
         id: user.id,
-        email: user.email,
-        full_name: user.user_metadata?.full_name ?? '',
-        company: user.user_metadata?.company ?? '',
-        created_at: user.created_at,
+        email: user.emailAddresses[0]?.emailAddress ?? '',
+        full_name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+        company: (user.publicMetadata?.company as string) ?? '',
+        created_at: new Date(user.createdAt).toISOString(),
       },
     })
   } catch (error) {
@@ -25,16 +25,17 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { error } = await supabase.auth.updateUser({
-      data: { full_name: body.full_name, company: body.company },
+    const clerk = await clerkClient()
+    await clerk.users.updateUser(userId, {
+      publicMetadata: { company: body.company },
+      firstName: body.full_name?.split(' ')[0] ?? '',
+      lastName: body.full_name?.split(' ').slice(1).join(' ') ?? '',
     })
 
-    if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Update profile error:', error)

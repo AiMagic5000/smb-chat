@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(
   _req: NextRequest,
@@ -7,9 +8,9 @@ export async function POST(
 ) {
   try {
     const { sid } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     await supabase.from('knowledge_sources').update({ status: 'processing' }).eq('id', sid)
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
   _req: NextRequest,
@@ -7,9 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { data: conversation } = await supabase
       .from('conversations')
@@ -32,9 +33,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const body = await req.json()
     const { data, error } = await supabase
@@ -58,9 +59,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { error } = await supabase.from('conversations').delete().eq('id', id)
     if (error) throw error

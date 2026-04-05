@@ -26,7 +26,7 @@ export default function ConversationsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Chatlogs</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -66,8 +66,8 @@ export default function ConversationsPage() {
         </Card>
       ) : (
         <Card>
-          <CardContent className="p-0">
-            <table className="w-full">
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b text-left text-sm text-gray-500">
                   <th className="px-4 py-3 font-medium">Contact</th>

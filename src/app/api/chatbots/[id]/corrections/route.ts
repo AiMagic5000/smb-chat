@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
   req: NextRequest,
@@ -7,9 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const url = new URL(req.url)
     const status = url.searchParams.get('status') ?? 'pending'
@@ -34,9 +35,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const body = await req.json()
     const { correction_id, action, corrected_response } = body
@@ -47,7 +48,7 @@ export async function POST(
 
     const updateData: Record<string, unknown> = {
       status: action, // approved, rejected, edited
-      reviewed_by: user.id,
+      reviewed_by: userId,
       reviewed_at: new Date().toISOString(),
     }
 

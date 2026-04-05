@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     // Notification preferences stored in workspace settings
     const { data: member } = await supabase
       .from('workspace_members')
       .select('workspace_id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .not('accepted_at', 'is', null)
       .limit(1)
       .single()
@@ -45,16 +46,16 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const body = await req.json()
 
     const { data: member } = await supabase
       .from('workspace_members')
       .select('workspace_id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .not('accepted_at', 'is', null)
       .limit(1)
       .single()

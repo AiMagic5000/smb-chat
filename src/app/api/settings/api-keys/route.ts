@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { randomBytes, createHash } from 'crypto'
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { data: keys } = await supabase
       .from('api_keys')
@@ -22,9 +23,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { name } = await req.json()
     if (!name) return NextResponse.json({ success: false, error: 'Name required' }, { status: 400 })
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     const { data: member } = await supabase
       .from('workspace_members')
       .select('workspace_id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .not('accepted_at', 'is', null)
       .limit(1)
       .single()
@@ -64,9 +65,9 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const supabase = await createServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const supabase = createAdminClient()
 
     const { id } = await req.json()
     const { error } = await supabase.from('api_keys').delete().eq('id', id)

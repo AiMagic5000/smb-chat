@@ -25,7 +25,7 @@ export default function ContactsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -65,8 +65,8 @@ export default function ContactsPage() {
         </Card>
       ) : (
         <Card>
-          <CardContent className="p-0">
-            <table className="w-full">
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[540px]">
               <thead>
                 <tr className="border-b text-left text-sm text-gray-500">
                   <th className="px-4 py-3 font-medium">Name</th>

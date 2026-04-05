@@ -56,16 +56,16 @@ const categories = [
 export default function FeaturesPage() {
   return (
     <div>
-      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white py-16">
-        <div className="mx-auto max-w-6xl px-6 text-center">
-          <h1 className="text-4xl font-extrabold mb-4">Features</h1>
-          <p className="text-lg text-blue-100 max-w-2xl mx-auto">Everything you need to build, deploy, and manage AI chatbots that deliver real results for your business.</p>
+      <section className="py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Features</h1>
+          <p className="text-lg text-gray-600 max-w-2xl">Everything you need to build, deploy, and manage AI chatbots that work for your business.</p>
         </div>
       </section>
 
       {categories.map((cat) => (
         <section key={cat.title} className="py-16 odd:bg-white even:bg-gray-50">
-          <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">{cat.title}</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {cat.features.map((f) => (
@@ -85,11 +85,11 @@ export default function FeaturesPage() {
       ))}
 
       {/* CTA */}
-      <section className="bg-blue-600 py-16">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">See it in action</h2>
-          <p className="text-lg text-blue-100 mb-8">Create your first chatbot in under 5 minutes. No credit card required.</p>
-          <Link href="/signup" className="inline-block rounded-lg bg-white px-8 py-3 text-base font-semibold text-blue-700 hover:bg-blue-50 transition">
+      <section className="py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">See it in action</h2>
+          <p className="text-lg text-gray-600 mb-8">Create your first chatbot in under 5 minutes. No credit card required.</p>
+          <Link href="/sign-up" className="inline-block rounded-lg bg-gray-900 px-8 py-3 text-base font-medium text-white hover:bg-gray-800 transition">
             Start Free Trial
           </Link>
         </div>

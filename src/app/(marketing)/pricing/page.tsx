@@ -27,10 +27,10 @@ const plans = Object.entries(PLANS) as [string, typeof PLANS[keyof typeof PLANS]
 export default function PricingPage() {
   return (
     <div>
-      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white py-16">
-        <div className="mx-auto max-w-6xl px-6 text-center">
-          <h1 className="text-4xl font-extrabold mb-4">Pricing</h1>
-          <p className="text-lg text-blue-100 max-w-2xl mx-auto">Simple plans that grow with your business. Start free, upgrade anytime.</p>
+      <section className="py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Pricing</h1>
+          <p className="text-lg text-gray-600 max-w-2xl">Simple plans that grow with your business. Start free, upgrade anytime.</p>
         </div>
       </section>
 
@@ -71,7 +71,7 @@ export default function PricingPage() {
                     Remove branding
                   </li>
                 </ul>
-                <Link href="/signup" className={`block text-center rounded-lg px-4 py-2.5 text-sm font-semibold transition ${key === 'turbo' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                <Link href="/sign-up" className={`block text-center rounded-lg px-4 py-2.5 text-sm font-semibold transition ${key === 'turbo' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                   {plan.price ? 'Start Free Trial' : 'Contact Sales'}
                 </Link>
               </div>
@@ -158,7 +158,7 @@ export default function PricingPage() {
         <div className="mx-auto max-w-4xl px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to get started?</h2>
           <p className="text-lg text-gray-600 mb-8">14-day free trial on every plan. No credit card required.</p>
-          <Link href="/signup" className="inline-block rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white hover:bg-blue-700 transition">
+          <Link href="/sign-up" className="inline-block rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white hover:bg-blue-700 transition">
             Start Your Free Trial
           </Link>
         </div>

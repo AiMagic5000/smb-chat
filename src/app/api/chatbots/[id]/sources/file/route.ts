@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerSupabase } from '@/lib/supabase/server'
 import { chunkText } from '@/lib/ai/chunker'
 import { generateEmbeddings } from '@/lib/ai/embeddings'
 
@@ -10,9 +10,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const authSupabase = await createServerSupabase()
-    const { data: { user } } = await authSupabase.auth.getUser()
-    if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null

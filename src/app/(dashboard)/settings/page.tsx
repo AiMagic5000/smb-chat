@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useClerk } from '@clerk/nextjs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
 import { useFetch } from '@/hooks/use-fetch'
-import { createClient } from '@/lib/supabase/client'
 
 interface Profile {
   id: string
@@ -24,7 +23,7 @@ interface Membership {
 }
 
 export default function SettingsPage() {
-  const router = useRouter()
+  const { signOut } = useClerk()
   const { data: profile, loading: profileLoading } = useFetch<Profile>('/api/settings/profile')
   const { data: memberships, loading: wsLoading } = useFetch<Membership[]>('/api/workspaces')
 
@@ -82,10 +81,8 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
+  const handleSignOut = () => {
+    signOut({ redirectUrl: '/' })
   }
 
   if (profileLoading || wsLoading) {
