@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Key, Copy, Check, Trash2, Plus, AlertCircle } from 'lucide-react'
+import { Loader2, Key, Copy, Check, Trash2, Plus, AlertCircle, BookOpen, ChevronDown, ChevronUp } from 'lucide-react'
 import { useFetch } from '@/hooks/use-fetch'
 
 interface Profile {
@@ -150,12 +150,24 @@ export default function SettingsPage() {
     setDeletingId(null)
   }
 
+  const [showDocs, setShowDocs] = useState(false)
+  const [docCopied, setDocCopied] = useState<string | null>(null)
+
   const copyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
       setKeyCopied(true)
       setTimeout(() => setKeyCopied(false), 2000)
     })
   }
+
+  const copySnippet = (id: string, text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setDocCopied(id)
+      setTimeout(() => setDocCopied(null), 2000)
+    })
+  }
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
   if (profileLoading || wsLoading) {
     return (
@@ -217,23 +229,35 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Generate API keys to integrate your chatbot into custom applications via the REST API.
-          </p>
+          <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 space-y-2">
+            <p className="text-sm text-gray-700 font-medium">What is this?</p>
+            <p className="text-sm text-gray-500">
+              SMB Chat provides its own REST API so you can send and receive chatbot messages from
+              your own code, internal tools, or automation platforms like Zapier, Make, or n8n.
+              This is not a third-party integration -- it connects directly to your chatbot on this platform.
+            </p>
+            <p className="text-sm text-gray-500">
+              Use cases: embed chat in a custom app, connect to a CRM, trigger bot replies from a
+              form submission, or build a mobile experience.
+            </p>
+          </div>
 
           {/* Create new key */}
-          <div className="flex gap-2">
-            <Input
-              value={newKeyName}
-              onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="Key name, e.g. Production"
-              className="flex-1"
-              onKeyDown={(e) => { if (e.key === 'Enter') createKey() }}
-            />
-            <Button onClick={createKey} disabled={creatingKey || !newKeyName.trim()}>
-              {creatingKey ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Generate
-            </Button>
+          <div>
+            <Label className="mb-1.5 block">Create a new key</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="Key name, e.g. Production"
+                className="flex-1"
+                onKeyDown={(e) => { if (e.key === 'Enter') createKey() }}
+              />
+              <Button onClick={createKey} disabled={creatingKey || !newKeyName.trim()}>
+                {creatingKey ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                Generate
+              </Button>
+            </div>
           </div>
 
           {/* Newly created key banner */}
@@ -274,7 +298,7 @@ export default function SettingsPage() {
               <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
             </div>
           ) : apiKeys.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">No API keys yet.</p>
+            <p className="text-sm text-gray-400 text-center py-4">No API keys yet. Generate one above to get started.</p>
           ) : (
             <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
               {apiKeys.map((k) => (
@@ -303,6 +327,102 @@ export default function SettingsPage() {
               ))}
             </div>
           )}
+
+          {/* API Documentation toggle */}
+          <div className="border-t border-gray-100 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowDocs((v) => !v)}
+              className="flex items-center gap-2 text-sm font-medium text-violet-600 hover:text-violet-800"
+            >
+              <BookOpen className="h-4 w-4" />
+              How to use the API
+              {showDocs ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+
+            {showDocs && (
+              <div className="mt-4 space-y-5 text-sm">
+                {/* Step 1 */}
+                <div>
+                  <p className="font-medium text-gray-900 mb-1">Step 1: Start a conversation</p>
+                  <p className="text-gray-500 mb-2">
+                    Create a session to get a <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">conversation_id</code>. You will need your Bot ID (shown on your chatbot dashboard).
+                  </p>
+                  <div className="relative">
+                    <pre className="text-xs bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+{`POST ${baseUrl}/api/widget/session
+Content-Type: application/json
+
+{
+  "bot_id": "YOUR_BOT_ID"
+}`}
+                    </pre>
+                    <button
+                      type="button"
+                      onClick={() => copySnippet('s1', `fetch('${baseUrl}/api/widget/session', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ bot_id: 'YOUR_BOT_ID' })\n}).then(r => r.json()).then(console.log)`)}
+                      className="absolute top-2 right-2 p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+                      title="Copy as fetch()"
+                    >
+                      {docCopied === 's1' ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Response: <code className="bg-gray-100 px-1 py-0.5 rounded">{`{ "success": true, "data": { "conversation_id": "..." } }`}</code>
+                  </p>
+                </div>
+
+                {/* Step 2 */}
+                <div>
+                  <p className="font-medium text-gray-900 mb-1">Step 2: Send a message</p>
+                  <p className="text-gray-500 mb-2">
+                    Send a user message and get the AI reply back instantly.
+                  </p>
+                  <div className="relative">
+                    <pre className="text-xs bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+{`POST ${baseUrl}/api/widget/chat
+Content-Type: application/json
+
+{
+  "bot_id": "YOUR_BOT_ID",
+  "conversation_id": "FROM_STEP_1",
+  "message": "What services do you offer?"
+}`}
+                    </pre>
+                    <button
+                      type="button"
+                      onClick={() => copySnippet('s2', `fetch('${baseUrl}/api/widget/chat', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    bot_id: 'YOUR_BOT_ID',\n    conversation_id: 'FROM_STEP_1',\n    message: 'What services do you offer?'\n  })\n}).then(r => r.json()).then(console.log)`)}
+                      className="absolute top-2 right-2 p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+                      title="Copy as fetch()"
+                    >
+                      {docCopied === 's2' ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Response: <code className="bg-gray-100 px-1 py-0.5 rounded">{`{ "success": true, "data": { "response": "We offer...", "conversation_id": "..." } }`}</code>
+                  </p>
+                </div>
+
+                {/* Use cases */}
+                <div className="rounded-lg bg-violet-50 border border-violet-100 p-3">
+                  <p className="font-medium text-violet-800 mb-1.5">Common integrations</p>
+                  <ul className="text-xs text-violet-700 space-y-1.5 list-disc list-inside">
+                    <li><strong>Zapier / Make / n8n</strong> -- Use an HTTP Request module to call the endpoints above. Trigger from a form, email, or CRM event.</li>
+                    <li><strong>Custom website or app</strong> -- Use JavaScript <code>fetch()</code> (examples above) to build your own chat UI.</li>
+                    <li><strong>Mobile apps</strong> -- Call the REST API from any language (Swift, Kotlin, Python, etc.).</li>
+                    <li><strong>Internal tools</strong> -- Connect your helpdesk, ticketing system, or Slack bot to route questions through your trained chatbot.</li>
+                  </ul>
+                </div>
+
+                {/* Rate limits */}
+                <div>
+                  <p className="font-medium text-gray-900 mb-1">Rate limits</p>
+                  <p className="text-xs text-gray-500">
+                    Chat: 60 requests per minute per IP. Sessions: 10 per hour per IP. Messages count toward your plan's monthly limit.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
