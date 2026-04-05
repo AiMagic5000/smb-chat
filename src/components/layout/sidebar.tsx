@@ -17,6 +17,7 @@ import {
   LogOut,
   Menu,
   X,
+  MoreHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,15 @@ const bottomItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
+// Bottom tab bar items for mobile (max 5)
+const tabItems = [
+  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { href: '/chatbots', label: 'Chatbots', icon: Bot },
+  { href: '/conversations', label: 'Chats', icon: MessageSquare },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/settings', label: 'Settings', icon: Settings },
+]
+
 export function Sidebar() {
   const pathname = usePathname()
   const { signOut } = useClerk()
@@ -48,7 +58,7 @@ export function Sidebar() {
     <>
       <div className="flex h-16 items-center justify-between border-b px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Bot className="h-7 w-7 text-blue-600" />
+          <Bot className="h-7 w-7 text-violet-600" />
           <span className="text-lg font-bold text-gray-900">SMB Chat</span>
         </Link>
         <button
@@ -70,7 +80,7 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-blue-50 text-blue-700'
+                  ? 'bg-violet-50 text-violet-700'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               )}
             >
@@ -92,7 +102,7 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-blue-50 text-blue-700'
+                  ? 'bg-violet-50 text-violet-700'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               )}
             >
@@ -114,16 +124,42 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile hamburger bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex h-14 items-center gap-3 border-b bg-white px-4">
-        <button onClick={() => setMobileOpen(true)} className="p-1 text-gray-600 hover:text-gray-900">
-          <Menu className="h-6 w-6" />
+      {/* Mobile top bar - minimal, just logo */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex h-14 items-center justify-between border-b bg-white px-4">
+        <div className="flex items-center gap-2">
+          <Bot className="h-6 w-6 text-violet-600" />
+          <span className="text-base font-bold text-gray-900">SMB Chat</span>
+        </div>
+        <button onClick={() => setMobileOpen(true)} className="p-1 text-gray-500 hover:text-gray-900">
+          <Menu className="h-5 w-5" />
         </button>
-        <Bot className="h-6 w-6 text-blue-600" />
-        <span className="text-base font-bold text-gray-900">SMB Chat</span>
       </div>
 
-      {/* Mobile overlay */}
+      {/* Mobile bottom tab bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-white">
+        <div className="flex items-center justify-around px-2 py-1">
+          {tabItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg min-w-0',
+                  isActive ? 'text-violet-600' : 'text-gray-400'
+                )}
+              >
+                <item.icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
+                <span className="text-[10px] font-medium truncate">{item.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+        {/* Safe area for notched phones */}
+        <div className="h-[env(safe-area-inset-bottom)]" />
+      </nav>
+
+      {/* Mobile overlay for full menu */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-50 bg-black/40"
@@ -131,7 +167,7 @@ export function Sidebar() {
         />
       )}
 
-      {/* Mobile slide-out */}
+      {/* Mobile slide-out full menu */}
       <aside
         className={cn(
           'lg:hidden fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white shadow-xl transition-transform duration-200',
