@@ -7,7 +7,7 @@ const updateSchema = z.object({
   accent_color: z.string().optional(),
   position: z.enum(['bottom-right', 'bottom-left']).optional(),
   avatar_url: z.string().url().nullable().optional(),
-  logo_url: z.string().url().nullable().optional(),
+  logo_url: z.string().nullable().optional(),
   header_title: z.string().max(100).optional(),
   header_subtitle: z.string().max(200).optional(),
   show_voice_button: z.boolean().optional(),
