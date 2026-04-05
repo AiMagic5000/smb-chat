@@ -168,8 +168,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <Link href="/features" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Features</Link>
               <Link href="/pricing" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Pricing</Link>
               <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Dashboard</Link>
-              <Link href="/terms" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Terms</Link>
-              <Link href="/privacy" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Privacy</Link>
+              <Link href="/legal/terms" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Terms</Link>
+              <Link href="/legal/privacy" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Privacy</Link>
             </nav>
             <p className="text-sm text-gray-400">Built by Start My Business Inc.</p>
           </div>
