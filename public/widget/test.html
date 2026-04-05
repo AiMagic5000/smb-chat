@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMB Chat Widget Test</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #1f2937; }
+    p { color: #6b7280; line-height: 1.6; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>SMB Chat Widget Test Page</h1>
+  <p>The chat widget should appear in the bottom-right corner of this page.</p>
+  <p>Replace <code>YOUR_BOT_ID</code> in the embed code with an actual chatbot ID from your dashboard.</p>
+  <p>Test the following:</p>
+  <ul>
+    <li>Click the launcher button to open the widget</li>
+    <li>Send a message and receive an AI response</li>
+    <li>Test the lead capture form</li>
+    <li>Test the human handoff button</li>
+    <li>Test feedback thumbs up/down</li>
+    <li>Test the End Chat button</li>
+  </ul>
+
+  <!-- SMB Chat Widget Embed Code -->
+  <script src="/widget/smb-chat.min.js" data-bot-id="test-bot-id" data-api="http://localhost:3000"></script>
+</body>
+</html>
