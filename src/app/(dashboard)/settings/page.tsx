@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useClerk } from '@clerk/nextjs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Key, Copy, Check, Trash2, Plus, AlertCircle } from 'lucide-react'
 import { useFetch } from '@/hooks/use-fetch'
 
 interface Profile {
@@ -20,6 +20,14 @@ interface Membership {
   workspace_id: string
   role: string
   workspaces: { id: string; name: string } | null
+}
+
+interface ApiKey {
+  id: string
+  name: string
+  key_prefix: string
+  created_at: string
+  key?: string
 }
 
 export default function SettingsPage() {
@@ -85,6 +93,70 @@ export default function SettingsPage() {
     signOut({ redirectUrl: '/' })
   }
 
+  // API Keys
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
+  const [keysLoading, setKeysLoading] = useState(true)
+  const [newKeyName, setNewKeyName] = useState('')
+  const [creatingKey, setCreatingKey] = useState(false)
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null)
+  const [keyCopied, setKeyCopied] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const loadKeys = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings/api-keys')
+      const json = await res.json()
+      if (json.success) setApiKeys(json.data ?? [])
+    } catch { /* ignore */ }
+    setKeysLoading(false)
+  }, [])
+
+  useEffect(() => { loadKeys() }, [loadKeys])
+
+  const createKey = async () => {
+    if (!newKeyName.trim()) return
+    setCreatingKey(true)
+    try {
+      const res = await fetch('/api/settings/api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newKeyName.trim() }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setNewlyCreatedKey(json.data.key)
+        setNewKeyName('')
+        loadKeys()
+      } else {
+        setMessage(json.error ?? 'Failed to create key.')
+      }
+    } catch {
+      setMessage('Network error.')
+    } finally {
+      setCreatingKey(false)
+    }
+  }
+
+  const deleteKey = async (id: string) => {
+    setDeletingId(id)
+    try {
+      await fetch('/api/settings/api-keys', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      setApiKeys((keys) => keys.filter((k) => k.id !== id))
+    } catch { /* ignore */ }
+    setDeletingId(null)
+  }
+
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+      setKeyCopied(true)
+      setTimeout(() => setKeyCopied(false), 2000)
+    })
+  }
+
   if (profileLoading || wsLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -134,6 +206,103 @@ export default function SettingsPage() {
             {wsSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Update Workspace
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5" />
+            API Keys
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Generate API keys to integrate your chatbot into custom applications via the REST API.
+          </p>
+
+          {/* Create new key */}
+          <div className="flex gap-2">
+            <Input
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              placeholder="Key name, e.g. Production"
+              className="flex-1"
+              onKeyDown={(e) => { if (e.key === 'Enter') createKey() }}
+            />
+            <Button onClick={createKey} disabled={creatingKey || !newKeyName.trim()}>
+              {creatingKey ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Generate
+            </Button>
+          </div>
+
+          {/* Newly created key banner */}
+          {newlyCreatedKey && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-sm text-amber-800 font-medium">
+                  Copy your API key now. You will not be able to see it again.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-gray-900 text-gray-100 rounded px-3 py-2 break-all">
+                  {newlyCreatedKey}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyKey(newlyCreatedKey)}
+                  className="shrink-0"
+                >
+                  {keyCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewlyCreatedKey(null)}
+                className="text-xs text-amber-600 hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Existing keys list */}
+          {keysLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            </div>
+          ) : apiKeys.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">No API keys yet.</p>
+          ) : (
+            <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+              {apiKeys.map((k) => (
+                <div key={k.id} className="flex items-center justify-between px-3 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{k.name}</p>
+                    <p className="text-xs text-gray-400">
+                      <code>{k.key_prefix}...</code> &middot; Created{' '}
+                      {new Date(k.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteKey(k.id)}
+                    disabled={deletingId === k.id}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    {deletingId === k.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
